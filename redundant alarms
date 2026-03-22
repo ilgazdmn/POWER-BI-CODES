@@ -1,0 +1,47 @@
+# In 'dataset' sono contenuti i dati di input per questo script
+import pandas as pd
+df = dataset.copy()
+# Sütun isimlerini ayarla (GERÇEK İSİMLERİNİ YAZ!)
+df = df.rename(columns={
+    'AlarmName': 'AlarmName',  # Senin sütun ismi
+    'Time': 'Time',
+    'Status': 'Status'
+})
+# Datetime dönüştür
+df['Time'] = pd.to_datetime(df['Time'], dayfirst=True)
+# Status bool yap
+df['Status'] = df['Status'].astype(str).str.strip().str.upper().map({'TRUE': True, 'FALSE': False})
+df['Status'] = df['Status'].fillna(False).astype(bool)
+# Sırala
+df = df.sort_values('Time').reset_index(drop=True)
+print(f"İşlenen satır: {len(df)}")
+# Event hesaplama (SANİYE)
+events = []
+current_event_id = 0
+current_alarm = None
+current_start_time = None
+for i in range(len(df)):
+    row = df.iloc[i]
+    alarm = str(row["AlarmName"]).strip()
+    t = row["Time"]
+    status = row["Status"]
+
+    if status and current_alarm is None:
+        current_event_id += 1
+        current_alarm = alarm
+        current_start_time = t
+
+    elif not status and current_alarm is not None:
+        duration_sec = (t - current_start_time).total_seconds()
+        events.append({
+            "EventID": current_event_id,
+            "MainAlarm": current_alarm,
+            "StartTime": current_start_time,
+            "EndTime": t,
+            "DurationSeconds": round(duration_sec, 2)
+        })
+        current_alarm = None
+        current_start_time = None
+# YENİ TABLO
+dataset = pd.DataFrame(events)
+print(f"Oluşturulan event sayısı: {len(dataset)}")
