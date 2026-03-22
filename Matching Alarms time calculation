@@ -1,0 +1,34 @@
+Error_Duration_Table = 
+VAR YesRows =
+    FILTER(
+        'dati settimnali filtrati',
+        'dati settimnali filtrati'[Value] = True    )
+
+RETURN
+ADDCOLUMNS(
+    YesRows,
+    "EndTime",
+        CALCULATE(
+            MIN('dati settimnali filtrati'[Data]),
+            FILTER(
+                'dati settimnali filtrati',
+                'dati settimnali filtrati'[TagName] = EARLIER('dati settimnali filtrati'[TagName]) &&
+                'dati settimnali filtrati'[Value] = False &&
+                'dati settimnali filtrati'[Data] >= EARLIER('dati settimnali filtrati'[Data])
+            )
+        ),
+    "Duration_Minutes",
+        DATEDIFF(
+            'dati settimnali filtrati'[Data],
+            CALCULATE(
+                MIN('dati settimnali filtrati'[Data]),
+                FILTER(
+                'dati settimnali filtrati',
+                'dati settimnali filtrati'[TagName] = EARLIER('dati settimnali filtrati'[TagName]) &&
+                'dati settimnali filtrati'[Value] = False &&
+                'dati settimnali filtrati'[Data] >= EARLIER('dati settimnali filtrati'[Data])
+                )
+            ),
+            SECOND
+        )
+)
